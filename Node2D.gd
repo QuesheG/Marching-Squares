@@ -7,13 +7,14 @@ extends Node2D
 var text: CompressedTexture2D = load("res://visualize_point.png")
 
 var size: Vector2
-var offset: int
+var offset: int = 5
 var q_x_points: int
 var q_y_points: int
 
 var point_arr: Array = []
 
 var frame: int = 0
+var noise: FastNoiseLite = FastNoiseLite.new()
 
 func declare_matrix(point_arr: Array, x_size: int, y_size: int) -> void:
 	for i in x_size + 1:
@@ -28,15 +29,15 @@ func make_grid() -> void:
 	while i <= size.x:
 		while j <= size.y:
 			var pos: Vector2 = Vector2(i, j)
-			var point: Point = Point.new(text, pos)
-			point.Sprite.scale = point.Sprite.scale / 5
-			add_child(point)
+			var point: Point = Point.new(pos) #text, 
+			#point.Sprite.scale = point.Sprite.scale / 5
+			#add_child(point)
 			point_arr[i / offset][j / offset] = point
 			j += offset
 		j = 0
 		i += offset
 	
-func calc() -> void:
+func calc(noise: FastNoiseLite) -> void:
 	for i in q_x_points:
 		for j in q_y_points:
 			
@@ -53,6 +54,10 @@ func calc() -> void:
 			var b: Vector2 = Vector2(x + offset, y + (offset/2))
 			var c: Vector2 = Vector2(x + (offset/2), y + offset)
 			var d: Vector2 = Vector2(x, y + (offset/2))
+			point_arr[i][j].State = ceili(noise.get_noise_3d(x, y, 0))
+			point_arr[i + 1][j].State = ceili(noise.get_noise_3d(x + offset, y, 0))
+			point_arr[i + 1][j + 1].State = ceili(noise.get_noise_3d(x + offset, y + offset, 0)) 
+			point_arr[i][j + 1].State = ceili(noise.get_noise_3d(x, y + offset, 0))
 			var state: int = get_state(
 				point_arr[i][j].State, 
 				point_arr[i + 1][j].State, 
@@ -90,7 +95,7 @@ func calc() -> void:
 				14:
 					create_line(c, d)
 
-func get_state(a: int, b: int, c: int, d: int) -> int:
+func get_state(a: float, b: float, c: float, d: float) -> int:
 	return a*8 + b*4 + c*2 + d
 	
 func create_line(p1: Vector2, p2: Vector2) -> void:
@@ -100,15 +105,26 @@ func create_line(p1: Vector2, p2: Vector2) -> void:
 	line.add_point(p1)
 	line.add_point(p2)
 
+func clear_lines() -> void:
+	for n in get_children():
+		n.queue_free()
+
 func _ready() -> void:
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	noise.frequency = 0.01
 	size = get_viewport_rect().size
-	offset = 20
 	q_x_points = size.x / offset
 	q_y_points = size.y / offset
 	declare_matrix(point_arr, q_x_points, q_y_points)
 	make_grid()
+	#calc()
 
 func _process(_delta: float) -> void:
 	if !frame:
-		calc()
+		clear_lines()
+		calc(noise)
+		noise.offset += Vector3(0.01, 0.01, 1)
 	frame += 1
+	if frame == 5:
+		frame = 0
+	pass
