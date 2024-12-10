@@ -11,9 +11,10 @@ config_version=5
 [application]
 
 config/name="AlgoTest"
+config/tags=PackedStringArray("algo_visualization")
 run/main_scene="res://node_2d.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://visualize_point.png"
 
 [debug]
 
@@ -23,6 +24,7 @@ gdscript/warnings/untyped_declaration=2
 
 window/size/viewport_width=800
 window/size/viewport_height=800
+window/size/mode=2
 
 [rendering]
 
